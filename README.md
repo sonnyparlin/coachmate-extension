@@ -1,12 +1,13 @@
-# Slow Down Chess
+# CoachMate Slow Down
 
 A Chrome extension for **lichess.org** and **chess.com** that stops you from moving too soon.
 Every time your opponent moves, a countdown starts and the on-page panel says
 *"You can make a move in 12.3s"*. Reply before it reaches zero and the panel flashes
 **Too quick!**, buzzes, and counts the slip.
 
-Part of [CoachMate](https://www.coachmatechess.com), the free chess notebook and trainer. The
-extension lives in its own repo because it ships as a store package on its own schedule.
+Part of [CoachMate](https://www.coachmatechess.com), the free chess notebook and trainer, and
+styled with its design tokens. The extension lives in its own repo because it ships as a store
+package on its own schedule.
 
 ## How the countdown is sized
 

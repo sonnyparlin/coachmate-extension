@@ -2,19 +2,19 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Slow Down Chess</title>
+  <title>CoachMate Slow Down</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <header>
-    <h1>⏱ Slow Down Chess</h1>
+    <span class="logo" role="img" aria-label="CoachMate Slow Down"><img src="../icons/mark.webp" alt=""><b>Coach<i>Mate</i></b><span class="sub">Slow down</span></span>
     <button id="pause" class="ghost" title="Pause / resume on this tab">Pause</button>
   </header>
 
   <section id="live" class="card">
     <div class="row"><span class="k">Site</span><span class="v" id="site">–</span></div>
     <div class="row"><span class="k">Time control</span><span class="v" id="tc">–</span></div>
-    <div class="row"><span class="k">Budget per move</span><span class="v" id="budget">–</span></div>
+    <div class="row"><span class="k">Wait per move</span><span class="v" id="budget">–</span></div>
     <div class="row"><span class="k">Next move</span><span class="v" id="next">–</span></div>
     <div class="row stats">
       <span>Moves <b id="judged">0</b></span>
@@ -39,9 +39,9 @@
       <small>Moves before this are free. 5 means the first four moves are not timed.</small>
     </label>
 
-    <h2>Per-move budget</h2>
+    <h2>How long to wait</h2>
     <label class="field">
-      <span>Budget source</span>
+      <span>Based on</span>
       <select name="budgetMode">
         <option value="auto">from the time control</option>
         <option value="fixed">fixed number of seconds</option>
@@ -50,7 +50,7 @@
     <label class="field" data-show="budgetMode=auto">
       <span>Expected game length (moves)</span>
       <input name="expectedMoves" type="number" min="10" max="200" step="1">
-      <small>Budget = base time ÷ this + increment. 10+5 at 40 moves → 20 s per move.</small>
+      <small>Wait = base time ÷ this + increment. 10+5 at 40 moves → 20 s per move.</small>
     </label>
     <label class="field">
       <span>Fixed seconds <small>(also used when no time control is found)</small></span>
@@ -64,7 +64,7 @@
     <h2>Forcing replies</h2>
     <p class="note">When your opponent captures or gives check, your reply is usually obvious, so only a short floor applies. It scales with the time control.</p>
     <label class="field">
-      <span>Floor after a capture or check (% of the budget)</span>
+      <span>Floor after a capture or check (% of the wait)</span>
       <input name="forcedFloorPercent" type="number" min="0" max="100" step="5">
     </label>
     <label class="field">
@@ -82,8 +82,9 @@
   </form>
 
   <footer>
-    <span>All time: <b id="ltJudged">0</b> moves, <b id="ltTooSoon">0</b> too quick (<b id="ltPct">–</b> on time)</span>
-    <button id="resetLifetime" class="link">reset</button>
+    <div class="tally"><span>All time: <b id="ltJudged">0</b> moves, <b id="ltTooSoon">0</b> too quick (<b id="ltPct">–</b> on time)</span>
+    <button id="resetLifetime" class="link">reset</button></div>
+    <span>Part of <a href="https://www.coachmatechess.com" target="_blank" rel="noopener">CoachMate</a>, the free chess notebook and trainer.</span>
   </footer>
   <script src="popup.js"></script>
 </body>

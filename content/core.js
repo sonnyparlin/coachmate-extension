@@ -1,4 +1,4 @@
-// Slow Down Chess - core content script.
+// CoachMate Slow Down - core content script.
 // Shared by the lichess and chess.com adapters, which call SlowDownChess.registerAdapter().
 (() => {
   'use strict';
@@ -341,52 +341,79 @@
   const CSS = `
     :host { all: initial; }
     * { box-sizing: border-box; }
-    .panel { position: fixed; top: 84px; right: 16px; width: 212px; z-index: 2147483000;
-      font: 13px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      color: #e8ecf1; background: rgba(22, 25, 31, 0.93); border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 12px; box-shadow: 0 8px 28px rgba(0,0,0,0.35); user-select: none; backdrop-filter: blur(6px);
+    .panel {
+      /* CoachMate tokens (design/coachmate-tokens.css). Dark is the default; light follows the system. */
+      --bg: #0F1218; --panel: #161B22; --panel-2: #1D232C; --line: #232A34; --border: #2E3642;
+      --text: #E7EAEE; --muted: #8E97A5; --accent: #7E9CFF; --accent-2: #3A57D6; --on-accent: #F5F7FB;
+      --gold: #E3BF63; --good: #6DBA92; --warn: #D9A35A; --bad: #E86A6A; --brand-gold: #F2A91E;
+      --font-ui: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --font-logo: "Poppins", "Manrope", system-ui, sans-serif;
+      position: fixed; top: 84px; right: 16px; width: 240px; z-index: 2147483000;
+      font: 500 13px/1.4 var(--font-ui); color: var(--text); background: var(--panel); border: 1px solid var(--border);
+      border-radius: 14px; box-shadow: 0 6px 20px rgba(0,0,0,.28); user-select: none;
       transition: border-color .15s, box-shadow .15s; }
+    @media (prefers-color-scheme: light) {
+      .panel { --bg: #EEF0F3; --panel: #F8F9FA; --panel-2: #E6E9ED; --line: #DCE0E6; --border: #C9CFD8;
+        --text: #12161C; --muted: #545D6B; --accent: #2F4FCB; --accent-2: #2F4FCB; --on-accent: #F7F8FA;
+        --gold: #7A590F; --good: #276C4A; --warn: #855210; --bad: #A82D36; box-shadow: 0 6px 20px rgba(18,22,28,.14); }
+    }
     .panel.hidden { display: none; }
-    .panel.flash { border-color: #ff4d4d; box-shadow: 0 0 0 3px rgba(255,77,77,.35), 0 8px 28px rgba(0,0,0,.35); animation: shake .35s; }
+    .panel.flash { border-color: var(--bad); box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 35%, transparent), 0 6px 20px rgba(0,0,0,.28); animation: shake .35s; }
     @keyframes shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-4px) } 75% { transform: translateX(4px) } }
-    .bar { display: flex; align-items: center; gap: 6px; padding: 7px 8px 7px 11px; cursor: grab; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    @media (prefers-reduced-motion: reduce) { .panel.flash { animation: none; } }
+    .bar { display: flex; align-items: center; gap: 4px; padding: 8px 8px 8px 10px; cursor: grab; border-bottom: 1px solid var(--line); }
     .bar:active { cursor: grabbing; }
-    .title { font-weight: 600; font-size: 12px; letter-spacing: .02em; opacity: .9; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mini { display: none; font-weight: 700; font-variant-numeric: tabular-nums; }
-    .btn { all: unset; cursor: pointer; width: 22px; height: 22px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center;
-      font-size: 12px; color: #c9d1db; }
-    .btn:hover { background: rgba(255,255,255,0.1); }
-    .btn.on { color: #ffd166; }
+    .logo { display: inline-flex; align-items: center; gap: 5px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; }
+    .logo img { width: 18px; height: 18px; flex: none; }
+    .logo b { font: 800 13px/1 var(--font-logo); letter-spacing: -.01em; color: var(--text); }
+    .logo b i { font-style: normal; color: var(--brand-gold); }
+    .logo .sub { font: 700 10.5px/1 var(--font-ui); color: var(--muted); letter-spacing: .02em; margin-left: 1px; }
+    .mini { display: none; font: 700 13px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+    .btn { all: unset; cursor: pointer; width: 24px; height: 24px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px; color: var(--muted); }
+    .btn:hover { background: var(--panel-2); color: var(--text); }
+    .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .btn.on { color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, transparent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent); }
     .body { padding: 10px 12px 10px; text-align: center; }
-    .label { font-size: 12px; color: #b8c0cc; min-height: 16px; }
+    .label { font-size: 12px; color: var(--muted); min-height: 17px; }
     .ring { position: relative; width: 112px; height: 112px; margin: 6px auto 4px; }
     .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-    .track { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 7; }
-    .prog { fill: none; stroke: #ff5a5a; stroke-width: 7; stroke-linecap: round; transition: stroke .2s; }
+    .track { fill: none; stroke: var(--panel-2); stroke-width: 7; }
+    .prog { fill: none; stroke: var(--accent); stroke-width: 7; stroke-linecap: round; transition: stroke .2s; }
     .num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-      font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
-    .num small { font-size: 14px; font-weight: 600; margin-left: 1px; opacity: .7; }
-    .wait .num { color: #ff6b6b; } .wait .prog { stroke: #ff5a5a; }
-    .ok .num { color: #5be38a; } .ok .prog { stroke: #45d37a; }
-    .idle .num { color: #9aa4b2; } .idle .prog { stroke: transparent; }
-    .meta { font-size: 11px; color: #8f98a5; margin-top: 2px; min-height: 14px; }
-    .stats { display: flex; justify-content: space-between; gap: 6px; margin-top: 9px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.07);
-      font-size: 11px; color: #aeb6c2; }
-    .stats b { color: #e8ecf1; font-weight: 600; }
-    .stats .bad b { color: #ff6b6b; }
+      font: 700 30px/1 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+    .num small { font-size: 14px; font-weight: 500; margin-left: 2px; color: var(--muted); }
+    .wait .num { color: var(--text); } .wait .prog { stroke: var(--accent); }
+    .ok .num { color: var(--good); } .ok .prog { stroke: var(--good); }
+    .idle .num { color: var(--muted); } .idle .prog { stroke: transparent; }
+    .flash .num { color: var(--bad); } .flash .prog { stroke: var(--bad); }
+    .meta { font: 500 11px/1.4 var(--font-ui); color: var(--muted); margin-top: 2px; min-height: 15px; font-variant-numeric: tabular-nums; }
+    .stats { display: flex; justify-content: space-between; gap: 6px; margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--line);
+      font-size: 11px; color: var(--muted); }
+    .stats b { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .stats .bad b { color: var(--bad); }
     .summary { text-align: left; }
-    .sum-head { font-size: 12px; color: #b8c0cc; text-align: center; }
-    .sum-big { font-size: 26px; font-weight: 700; text-align: center; margin-top: 4px; letter-spacing: -.02em; }
-    .sum-big.bad { color: #ff6b6b; } .sum-big.good { color: #5be38a; }
-    .sum-sub { font-size: 11px; color: #8f98a5; text-align: center; margin-bottom: 8px; }
-    .sum-rows div { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: #aeb6c2; padding: 2px 0; }
-    .sum-rows b { color: #e8ecf1; font-weight: 600; white-space: nowrap; }
-    .sum-list { font-size: 11px; color: #ffb3b3; margin-top: 6px; text-align: center; }
+    .sum-head { font: 700 11px/16px var(--font-ui); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); text-align: center; }
+    .sum-big { font: 700 30px/1.1 var(--font-ui); text-align: center; margin-top: 4px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .sum-big.bad { color: var(--bad); } .sum-big.good { color: var(--good); }
+    .sum-sub { font-size: 11px; color: var(--muted); text-align: center; margin-bottom: 8px; }
+    .sum-rows div { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--muted); padding: 2px 0; }
+    .sum-rows b { color: var(--text); font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .sum-list { font-size: 11px; color: var(--bad); margin-top: 6px; text-align: center; }
     .panel.collapsed .body { display: none; }
     .panel.collapsed { width: auto; min-width: 150px; }
     .panel.collapsed .mini { display: inline; }
     .panel.collapsed .bar { border-bottom: 0; }
   `;
+
+  function markHtml() {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) return `<img src="${chrome.runtime.getURL('icons/mark.webp')}" alt="">`;
+    } catch (_) { /* not running as an extension */ }
+    return '';
+  }
 
   function buildOverlay() {
     host = document.createElement('div');
@@ -396,7 +423,7 @@
       <style>${CSS}</style>
       <div class="panel idle" part="panel">
         <div class="bar">
-          <span class="title">⏱ Slow Down</span>
+          <span class="logo">${markHtml()}<b>Coach<i>Mate</i></b><span class="sub">Slow down</span></span>
           <span class="mini">—</span>
           <button class="btn pause" title="Pause / resume">⏸</button>
           <button class="btn collapse" title="Collapse / expand">–</button>
@@ -436,13 +463,13 @@
     blocker.id = 'slow-down-chess-blocker';
     Object.assign(blocker.style, {
       position: 'fixed', display: 'none', zIndex: '2147482000', cursor: 'not-allowed',
-      background: 'rgba(255, 70, 70, 0.10)', outline: '3px solid rgba(255,70,70,.55)', outlineOffset: '-3px',
+      background: 'rgba(232, 106, 106, 0.10)', outline: '3px solid rgba(232,106,106,.6)', outlineOffset: '-3px',
       alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto',
     });
     const tag = document.createElement('div');
     Object.assign(tag.style, {
-      font: '600 20px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', color: '#fff',
-      background: 'rgba(20,20,24,.78)', padding: '10px 16px', borderRadius: '10px', textAlign: 'center', pointerEvents: 'none',
+      font: '700 20px/1.2 "JetBrains Mono", ui-monospace, Menlo, monospace', color: '#E7EAEE', fontVariantNumeric: 'tabular-nums',
+      background: 'rgba(22,27,34,.92)', border: '1px solid #2E3642', padding: '10px 16px', borderRadius: '12px', textAlign: 'center', pointerEvents: 'none',
     });
     blocker.appendChild(tag);
     for (const ev of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'dblclick', 'touchstart', 'touchend', 'contextmenu']) {
@@ -460,7 +487,7 @@
 
   function applyPos() {
     if (!pos) return;
-    const w = els.panel.offsetWidth || 212, h = els.panel.offsetHeight || 200;
+    const w = els.panel.offsetWidth || 240, h = els.panel.offsetHeight || 200;
     const left = Math.min(Math.max(0, pos.left), window.innerWidth - w);
     const top = Math.min(Math.max(0, pos.top), window.innerHeight - h);
     els.panel.style.left = left + 'px'; els.panel.style.top = top + 'px'; els.panel.style.right = 'auto';
@@ -494,7 +521,7 @@
     if (S.summary) return { num: '—', label: 'Game over', cls: 'idle', summary: true };
     if (S.paused) return { num: '⏸', label: 'Paused', cls: 'idle' };
     if (S.gameOver) return { num: '—', label: 'Game over', cls: 'idle' };
-    if (S.lowClock) return { num: '—', label: `Clock under ${settings.lowClockSeconds}s · counter off`, cls: 'idle' };
+    if (S.lowClock) return { num: '—', label: `Clock under ${settings.lowClockSeconds}s · countdown off`, cls: 'idle' };
     const myTurn = S.turn === me;
     if (S.counterStart != null) {
       const rem = Math.max(0, S.deadline - now) / 1000;
