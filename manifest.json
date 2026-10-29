@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Slow Down Chess",
+  "version": "1.0.0",
+  "description": "A per-move countdown for lichess and chess.com, sized to the time control, so you stop moving too soon.",
+  "permissions": ["storage"],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Slow Down Chess",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://lichess.org/*"],
+      "js": ["content/core.js", "content/lichess.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.chess.com/*", "https://chess.com/*"],
+      "js": ["content/core.js", "content/chesscom.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

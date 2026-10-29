@@ -1,0 +1,90 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Slow Down Chess</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <h1>⏱ Slow Down Chess</h1>
+    <button id="pause" class="ghost" title="Pause / resume on this tab">Pause</button>
+  </header>
+
+  <section id="live" class="card">
+    <div class="row"><span class="k">Site</span><span class="v" id="site">–</span></div>
+    <div class="row"><span class="k">Time control</span><span class="v" id="tc">–</span></div>
+    <div class="row"><span class="k">Budget per move</span><span class="v" id="budget">–</span></div>
+    <div class="row"><span class="k">Next move</span><span class="v" id="next">–</span></div>
+    <div class="row stats">
+      <span>Moves <b id="judged">0</b></span>
+      <span>Too quick <b id="tooSoon" class="bad">0</b></span>
+      <span>Avg <b id="avg">–</b></span>
+      <button id="resetGame" class="link">reset</button>
+    </div>
+    <div id="inactive" class="note hidden">Open a game on lichess.org or chess.com to see live numbers.</div>
+  </section>
+
+  <section id="history" class="card hidden">
+    <div class="row"><span class="k">Recent games</span><button id="clearGames" class="link">clear</button></div>
+    <table id="games"></table>
+  </section>
+
+  <form id="settings">
+    <h2>Countdown</h2>
+    <p class="note">The countdown starts each time your opponent moves and tells you when you may reply.</p>
+    <label class="field">
+      <span>Start counting at my move number</span>
+      <input name="startMove" type="number" min="1" max="100" step="1">
+      <small>Moves before this are free. 5 means the first four moves are not timed.</small>
+    </label>
+
+    <h2>Per-move budget</h2>
+    <label class="field">
+      <span>Budget source</span>
+      <select name="budgetMode">
+        <option value="auto">from the time control</option>
+        <option value="fixed">fixed number of seconds</option>
+      </select>
+    </label>
+    <label class="field" data-show="budgetMode=auto">
+      <span>Expected game length (moves)</span>
+      <input name="expectedMoves" type="number" min="10" max="200" step="1">
+      <small>Budget = base time ÷ this + increment. 10+5 at 40 moves → 20 s per move.</small>
+    </label>
+    <label class="field">
+      <span>Fixed seconds <small>(also used when no time control is found)</small></span>
+      <input name="fixedSeconds" type="number" min="0.5" max="600" step="0.5">
+    </label>
+    <label class="field">
+      <span>Switch off when my clock is under (seconds)</span>
+      <input name="lowClockSeconds" type="number" min="0" max="3600" step="1">
+    </label>
+
+    <h2>Forcing replies</h2>
+    <p class="note">When your opponent captures or gives check, your reply is usually obvious, so only a short floor applies. It scales with the time control.</p>
+    <label class="field">
+      <span>Floor after a capture or check (% of the budget)</span>
+      <input name="forcedFloorPercent" type="number" min="0" max="100" step="5">
+    </label>
+    <label class="field">
+      <span>…but never more than (seconds)</span>
+      <input name="forcedFloorSeconds" type="number" min="1" max="600" step="0.5">
+      <small>25% capped at 5 s gives 5 s in a 10+5 game, about 1.5 s in 3+2 and 1 s in bullet.</small>
+    </label>
+
+    <h2>Behaviour</h2>
+    <label class="check"><input name="sound" type="checkbox"> Sounds (chime when ready, buzz when too soon)</label>
+    <label class="check"><input name="block" type="checkbox"> Cover the board until the countdown ends</label>
+    <label class="check"><input name="showOverlay" type="checkbox"> Show the on-page panel</label>
+    <label class="check"><input name="enabledLichess" type="checkbox"> Enable on lichess.org</label>
+    <label class="check"><input name="enabledChesscom" type="checkbox"> Enable on chess.com</label>
+  </form>
+
+  <footer>
+    <span>All time: <b id="ltJudged">0</b> moves, <b id="ltTooSoon">0</b> too quick (<b id="ltPct">–</b> on time)</span>
+    <button id="resetLifetime" class="link">reset</button>
+  </footer>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body { width: 320px; margin: 0; padding: 12px 14px 10px; font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #1d2229; background: #f6f7f9; }
+@media (prefers-color-scheme: dark) { body { color: #e6e9ee; background: #1c1f24; } }
+header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+h1 { font-size: 15px; margin: 0; }
+h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; opacity: .6; margin: 14px 0 6px; }
+.card { background: rgba(127,127,127,.1); border-radius: 10px; padding: 8px 10px; }
+.row { display: flex; justify-content: space-between; padding: 2px 0; }
+.row .k { opacity: .65; }
+.row .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+.row.stats { gap: 10px; justify-content: flex-start; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(127,127,127,.25); }
+.row.stats b { font-weight: 600; }
+.bad { color: #e5484d; }
+.note { font-size: 12px; opacity: .7; margin-top: 4px; }
+.hidden { display: none; }
+.field { display: block; margin: 8px 0; }
+.field > span { display: block; font-weight: 500; margin-bottom: 3px; }
+.field small, .field > span small { font-weight: 400; opacity: .65; display: block; margin-top: 3px; font-size: 11px; }
+.field > span small { display: inline; margin: 0; }
+input[type=text], input[type=number], select { width: 100%; padding: 6px 8px; border-radius: 7px; border: 1px solid rgba(127,127,127,.4);
+  background: rgba(255,255,255,.7); color: inherit; font: inherit; }
+@media (prefers-color-scheme: dark) { input[type=text], input[type=number], select { background: rgba(0,0,0,.25); } }
+.check { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+button.ghost { font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 7px; border: 1px solid rgba(127,127,127,.4); background: transparent; color: inherit; cursor: pointer; }
+button.ghost.on { background: #ffd166; color: #1d2229; border-color: transparent; }
+button.link { font: inherit; font-size: 12px; background: none; border: 0; color: #3b82f6; cursor: pointer; padding: 0; margin-left: auto; }
+footer { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 12px; opacity: .85; }
+#games { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 11.5px; }
+#games td { padding: 2px 0; white-space: nowrap; }
+#games td.r { text-align: right; font-variant-numeric: tabular-nums; }
+#games td.dim { opacity: .6; }
