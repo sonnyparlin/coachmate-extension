@@ -29,6 +29,11 @@
     settingKey: 'enabledChesscom',
     findBoard: board,
     getGameKey: () => location.pathname,
+    getUserName: () => {
+      const e = q('.player-bottom [data-test-element="user-tagline-username"], .player-bottom .cc-user-username-component');
+      const t = e ? e.textContent.trim() : '';
+      return t && !/^(Player|Opponent)$/i.test(t) ? t : null;
+    },
     // The player at the bottom of the board is the user; the board is flipped when playing black.
     getUserColor() { const b = board(); return b ? (flipped(b) ? 'b' : 'w') : null; },
 

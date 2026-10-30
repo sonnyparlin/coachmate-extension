@@ -537,18 +537,24 @@
 
   function flash(msg) { S.flashMsg = msg; S.flashUntil = Date.now() + 1800; }
 
-  // CoachMate's free game check. With the game id from the page URL it opens this exact game
-  // (/analyze?g=li:<id> or cc:live:<id>, plus your side); otherwise the plain analyze page.
+  // CoachMate's free game check. The link carries this game's own URL in ?q=, which the analyze
+  // page drops into its "Paste a game link" box and submits, exactly as if you had pasted it.
+  // The side rides along the way the page already reads it: lichess links end in /white|/black,
+  // chess.com links carry ?username=<you>. With no game id in the page URL, the plain page.
   const ANALYZE = 'https://www.coachmatechess.com/analyze';
+  function gameUrl() {
+    const path = (typeof location !== 'undefined' && location.pathname) || '';
+    const side = S.userColor === 'b' ? 'black' : 'white';
+    const name = adapter.getUserName ? adapter.getUserName() : null;
+    let m;
+    if (adapter.name === 'lichess' && (m = /^\/([A-Za-z0-9]{8})(?:[A-Za-z0-9]{4})?(?:\/|$)/.exec(path))) return `https://lichess.org/${m[1]}/${side}`;
+    if (adapter.name === 'chess.com' && (m = /^\/game\/((?:live|daily)\/)?(\d+)/.exec(path))) {
+      return `https://www.chess.com/game/${m[1] || ''}${m[2]}${name ? `?username=${encodeURIComponent(name)}` : ''}`;
+    }
+    return null;
+  }
   function analyzeUrl() {
-    try {
-      const path = (typeof location !== 'undefined' && location.pathname) || '';
-      const side = S.userColor === 'b' ? 'b' : 'w';
-      let m;
-      if (adapter.name === 'lichess' && (m = /^\/([A-Za-z0-9]{8})(?:[A-Za-z0-9]{4})?(?:\/|$)/.exec(path))) return `${ANALYZE}?g=li:${m[1]}&side=${side}`;
-      if (adapter.name === 'chess.com' && (m = /^\/game\/(live|daily)\/(\d+)/.exec(path))) return `${ANALYZE}?g=cc:${m[1]}:${m[2]}&side=${side}`;
-      if (adapter.name === 'chess.com' && (m = /^\/game\/(\d+)/.exec(path))) return `${ANALYZE}?g=cc:auto:${m[1]}&side=${side}`;
-    } catch (_) { /* fall through to the plain page */ }
+    try { const g = gameUrl(); if (g) return `${ANALYZE}?q=${encodeURIComponent(g)}`; } catch (_) { /* plain page */ }
     return ANALYZE;
   }
 

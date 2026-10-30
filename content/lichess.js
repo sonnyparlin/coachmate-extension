@@ -53,6 +53,7 @@
     settingKey: 'enabledLichess',
     findBoard: wrap,
     getGameKey: () => location.pathname.split('/')[1] || '/',
+    getUserName: () => me() || null,
     getUserColor: userColor,
 
     getPly() {
