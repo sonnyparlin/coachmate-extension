@@ -51,9 +51,11 @@ the average shortfall on the quick moves, and which move numbers were too quick.
 Under the summary, **Analyze this game ↗** opens CoachMate's free game check in a new tab
 with this game's link already in the "Paste a game link" box and submitted, exactly as if you
 had pasted it. The link carries your side the way the page reads it: lichess links end in
-`/white` or `/black`, chess.com links carry `?username=<you>`. When no game id can be read from
-the page URL (lichess `/<id>`, chess.com `/game/live/<id>`, `/game/daily/<id>` or `/game/<id>`),
-it opens the plain analyze page instead.
+`/white` or `/black`, chess.com links carry `?username=<you>`. The lichess id is read from the
+page URL (`/<id>`, `/game/<id>`, `/embed/<id>`, with or without the player suffix), then from the
+page's `og:url`, then from any white/black link on the page; chess.com ids come from
+`/game/live/<id>`, `/game/daily/<id>` or `/game/<id>`. When no id can be found the link opens
+the plain analyze page, and its hover text says so.
 
 Time control detection:
 

@@ -542,12 +542,27 @@
   // The side rides along the way the page already reads it: lichess links end in /white|/black,
   // chess.com links carry ?username=<you>. With no game id in the page URL, the plain page.
   const ANALYZE = 'https://www.coachmatechess.com/analyze';
+  // Lichess game ids are 8 chars; the player's own URL adds a 4-char secret, finished games redirect
+  // to /game/<id>/<color>, and embeds use /embed/<id>. The URL is tried first, then the page's own
+  // og:url, then any "white"/"black" link on the page, so a URL shape we have not seen still works.
+  const LI_PATH = /^\/(?:game\/|embed\/)?([A-Za-z0-9]{8})(?:[A-Za-z0-9]{4})?(?:\/|$)/;
+  const LI_URL = /lichess\.org\/(?:game\/|embed\/)?([A-Za-z0-9]{8})(?:[A-Za-z0-9]{4})?(?:\/|[?#]|$)/;
+  function lichessGameId(path) {
+    let m = LI_PATH.exec(path);
+    if (m) return m[1];
+    const og = document.querySelector('meta[property="og:url"]');
+    if (og && (m = LI_URL.exec(og.content || ''))) return m[1];
+    for (const a of document.querySelectorAll('a[href*="/white"], a[href*="/black"]')) {
+      if ((m = LI_PATH.exec(a.getAttribute('href') || ''))) return m[1];
+    }
+    return null;
+  }
   function gameUrl() {
     const path = (typeof location !== 'undefined' && location.pathname) || '';
     const side = S.userColor === 'b' ? 'black' : 'white';
     const name = adapter.getUserName ? adapter.getUserName() : null;
     let m;
-    if (adapter.name === 'lichess' && (m = /^\/([A-Za-z0-9]{8})(?:[A-Za-z0-9]{4})?(?:\/|$)/.exec(path))) return `https://lichess.org/${m[1]}/${side}`;
+    if (adapter.name === 'lichess') { const id = lichessGameId(path); return id ? `https://lichess.org/${id}/${side}` : null; }
     if (adapter.name === 'chess.com' && (m = /^\/game\/((?:live|daily)\/)?(\d+)/.exec(path))) {
       return `https://www.chess.com/game/${m[1] || ''}${m[2]}${name ? `?username=${encodeURIComponent(name)}` : ''}`;
     }
@@ -556,6 +571,11 @@
   function analyzeUrl() {
     try { const g = gameUrl(); if (g) return `${ANALYZE}?q=${encodeURIComponent(g)}`; } catch (_) { /* plain page */ }
     return ANALYZE;
+  }
+  function analyzeLink() {
+    let g = null; try { g = gameUrl(); } catch (_) { /* no game link */ }
+    const title = g ? `Opens ${g} in CoachMate's game check` : 'No game id found on this page: opens the analyze page, paste the game link there';
+    return `<a class="sum-link" href="${analyzeUrl()}" title="${title}" target="_blank" rel="noopener">Analyze this game ↗</a>`;
   }
 
   function statusInfo(now) {
@@ -633,9 +653,9 @@
              ${sm.avgShortfall != null ? `<div><span>Avg shortfall when quick</span><b>${fmt(sm.avgShortfall)}s</b></div>` : ''}
            </div>
            <div class="sum-list">${quickList}</div>
-           <a class="sum-link" href="${analyzeUrl()}" target="_blank" rel="noopener">Analyze this game ↗</a>`
+           ${analyzeLink()}`
         : `<div class="sum-head">Game over</div><div class="sum-sub">No moves were timed this game.</div>
-           <a class="sum-link" href="${analyzeUrl()}" target="_blank" rel="noopener">Analyze this game ↗</a>`;
+           ${analyzeLink()}`;
     }
 
     els.m.textContent = String(S.judged);
