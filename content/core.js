@@ -337,7 +337,7 @@
 
   // ---------- overlay ----------
   const fmt = n => (n == null ? '–' : (Math.round(n * 10) / 10).toString());
-  let host, root, els = {}, blocker, collapsed = false, pos = null;
+  let host, root, els = {}, blocker, collapsed = false, pos = null, summaryHtml = null;
 
   const CSS = `
     :host { all: initial; }
@@ -640,7 +640,7 @@
     els.summary.style.display = sm ? '' : 'none';
     if (sm) {
       const quickList = sm.quickMoves.length ? `Too quick on move${sm.quickMoves.length > 1 ? 's' : ''} ${sm.quickMoves.join(', ')}` : 'Never moved too quick';
-      els.summary.innerHTML = sm.judged
+      const html = sm.judged
         ? `<div class="sum-head">Game over</div>
            <div class="sum-big ${sm.tooSoon ? 'bad' : 'good'}">${sm.tooSoon} of ${sm.judged}</div>
            <div class="sum-sub">moves too quick · ${sm.pct}% on time</div>
@@ -656,7 +656,10 @@
            ${analyzeLink()}`
         : `<div class="sum-head">Game over</div><div class="sum-sub">No moves were timed this game.</div>
            ${analyzeLink()}`;
-    }
+      // Only touch the DOM when the text changes. Rewriting innerHTML on every 100 ms tick replaced
+      // the "Analyze this game" link between mousedown and mouseup, so a plain left click never fired.
+      if (html !== summaryHtml) { summaryHtml = html; els.summary.innerHTML = html; }
+    } else summaryHtml = null;
 
     els.m.textContent = String(S.judged);
     els.ts.textContent = String(S.tooSoon);
