@@ -3,7 +3,8 @@
 A Chrome extension for **lichess.org** and **chess.com** that stops you from moving too soon.
 Every time your opponent moves, a countdown starts and the on-page panel says
 *"You can make a move in 12.3s"*. Reply before it reaches zero and the panel flashes
-**Too quick!**, buzzes, and counts the slip.
+**Too quick!**, buzzes, and counts the slip. While the countdown runs the panel walks you
+through **Checks · Captures · Threats**, one word per third of the wait.
 
 Part of [CoachMate](https://www.coachmatechess.com), the free chess notebook and trainer, and
 styled with its design tokens. The extension lives in its own repo because it ships as a store
@@ -20,15 +21,25 @@ Everything above is configurable from the toolbar popup: the move the countdown 
 the expected game length, a fixed number of seconds instead of the formula, and a low-clock
 cutoff (default 20 s) below which the countdown switches itself off.
 
-## Forcing replies
+## Captures and checks
 
 A recapture rarely needs 20 seconds of thought, but it does need a glance for a trap or an
 in-between move. So when the opponent's move was a capture (an "x" in the notation) or a
-check ("+"), your reply gets a short floor instead of the full budget: 25% of the budget,
+check ("+"), you only have to wait a shorter minimum instead of the full budget: 25% of the budget,
 capped at 5 s and never under 1 s, so it scales with the time control (5 s in 10+5, about
 1.5 s in 3+2, 1 s in bullet). Both numbers are in the popup. The panel
 labels these countdowns ("Recapture? Check for a trap first") and the end-of-game summary
 reports quick moves after captures or checks separately from quick quiet moves.
+
+## Checks · Captures · Threats
+
+The countdown row has a small dial on the left and a three-word checklist on the right. The
+wait is split into thirds: the first third lights **Checks**, the second **Captures**, the
+third **Threats**, and words you have passed are struck through. The short minimum wait after
+a capture or check is too brief for three words, so it shows a single **Trap?** instead. The
+words are fixed. They never depend on the position, never change order and are never skipped,
+which is what keeps this on the right side of both sites' fair-play rules (see below). The
+reminder can be switched off in the popup, which gives the dial back its full size.
 
 ## End-of-game summary
 
@@ -36,6 +47,12 @@ When the game ends the panel switches to a summary: how many timed moves were to
 and the percentage on time, average wait, fastest and slowest reply, longest on-time streak,
 the average shortfall on the quick moves, and which move numbers were too quick. The last
 50 games are kept locally and the popup lists the most recent ones.
+
+Under the summary, **Analyze this game ↗** opens CoachMate's free game check in a new tab.
+When the game id can be read from the page URL (lichess `/<id>`, chess.com `/game/live/<id>`
+or `/game/daily/<id>`) the link opens that exact game with your side preselected
+(`/analyze?g=li:<id>&side=w`); otherwise it opens the plain analyze page where you can paste
+the game link.
 
 Time control detection:
 
@@ -113,10 +130,11 @@ release. The same zip is what the Chrome Web Store and Edge Add-ons dashboards t
 - **Expected game length** – the move count the base time is divided across (default 40).
 - **Fixed seconds** – used in fixed mode and whenever no time control can be read (default 15).
 - **Low-clock cutoff** – no countdown when your clock is under this many seconds (default 20).
-- **Floor after a capture or check** – share of the budget (default 25%), capped in seconds (default 5).
+- **Minimum wait after a capture or check** – share of the normal wait (default 25%), capped in seconds (default 5). The popup shows what that comes to in 10+5, 3+2 and 1+0.
 - **Sounds** – a chime when the countdown ends, a buzz when you move too soon.
 - **Cover the board** – optional hard mode: a transparent cover sits over the board until the
   countdown ends so a premature move is impossible. Off by default.
+- **Show Checks · Captures · Threats** – the reminder beside the dial (on by default).
 - Per-site on/off switches and a toggle for the on-page panel.
 
 The popup also shows the current game's numbers (time control, budget, next move, moves judged,

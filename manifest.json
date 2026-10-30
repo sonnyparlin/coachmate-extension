@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "CoachMate Slow Down",
   "short_name": "Slow Down",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Waits for you after every opponent move, sized to the time control, so you stop moving too soon. Part of CoachMate.",
   "homepage_url": "https://www.coachmatechess.com",
   "permissions": [

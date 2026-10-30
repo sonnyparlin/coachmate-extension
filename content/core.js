@@ -16,6 +16,7 @@
     sound: true,
     block: false,             // cover the board until the countdown ends
     showOverlay: true,
+    reminder: true,           // Checks · Captures · Threats, one word per third of the wait
     enabledLichess: true,
     enabledChesscom: true,
   };
@@ -378,13 +379,26 @@
       box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent); }
     .body { padding: 10px 12px 10px; text-align: center; }
     .label { font-size: 12px; color: var(--muted); min-height: 17px; }
-    .ring { position: relative; width: 112px; height: 112px; margin: 6px auto 4px; }
+    /* The countdown row: a dial on the left, the Checks · Captures · Threats reminder on the right.
+       Each third of the wait lights one word; words you have passed are struck through. */
+    .row { display: flex; align-items: center; gap: 14px; margin: 10px 0 8px; text-align: left; min-height: 84px; }
+    .ring { position: relative; width: 76px; height: 76px; flex: none; }
     .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
     .track { fill: none; stroke: var(--panel-2); stroke-width: 7; }
     .prog { fill: none; stroke: var(--accent); stroke-width: 7; stroke-linecap: round; transition: stroke .2s; }
     .num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-      font: 700 30px/1 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
-    .num small { font-size: 14px; font-weight: 500; margin-left: 2px; color: var(--muted); }
+      font: 700 21px/1 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+    .num small { font-size: 11px; font-weight: 500; margin-left: 1px; color: var(--muted); }
+    .words { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+    .word { font: 600 12.5px/1.2 var(--font-ui); color: var(--muted); padding-left: 10px; position: relative; transition: font-size .2s, color .2s; }
+    .word::before { content: ""; position: absolute; left: 0; top: 50%; width: 3px; height: 72%; transform: translateY(-50%); border-radius: 2px; background: var(--line); }
+    .word.done { opacity: .5; text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--muted) 60%, transparent); }
+    .word.on { font: 800 20px/1.15 var(--font-ui); letter-spacing: -.01em; color: var(--text); }
+    .word.on::before { background: var(--accent); }
+    .word.trap { display: none; }
+    .words.forcing .word { display: none; } .words.forcing .word.trap { display: block; }
+    .panel.no-reminder .words { display: none; } .panel.no-reminder .row { justify-content: center; }
+    .panel.no-reminder .ring { width: 96px; height: 96px; } .panel.no-reminder .num { font-size: 26px; }
     .wait .num { color: var(--text); } .wait .prog { stroke: var(--accent); }
     .ok .num { color: var(--good); } .ok .prog { stroke: var(--good); }
     .idle .num { color: var(--muted); } .idle .prog { stroke: transparent; }
@@ -402,6 +416,10 @@
     .sum-rows div { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--muted); padding: 2px 0; }
     .sum-rows b { color: var(--text); font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
     .sum-list { font-size: 11px; color: var(--bad); margin-top: 6px; text-align: center; }
+    .sum-link { display: block; margin-top: 10px; padding: 8px 10px; border-radius: 9px; text-align: center; text-decoration: none;
+      font: 700 12px/1.2 var(--font-ui); color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent); }
+    .sum-link:hover { background: color-mix(in srgb, var(--accent) 20%, transparent); }
     .panel.collapsed .body { display: none; }
     .panel.collapsed { width: auto; min-width: 150px; }
     .panel.collapsed .mini { display: inline; }
@@ -431,9 +449,12 @@
         <div class="body">
           <div class="live">
             <div class="label">Waiting for a game…</div>
-            <div class="ring">
-              <svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="44"/><circle class="prog" cx="50" cy="50" r="44"/></svg>
-              <div class="num">—</div>
+            <div class="row">
+              <div class="ring">
+                <svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="44"/><circle class="prog" cx="50" cy="50" r="44"/></svg>
+                <div class="num">—</div>
+              </div>
+              <div class="words"><span class="word">Checks</span><span class="word">Captures</span><span class="word">Threats</span><span class="word trap on">Trap?</span></div>
             </div>
             <div class="meta"></div>
           </div>
@@ -451,6 +472,7 @@
       meta: root.querySelector('.meta'), m: root.querySelector('.m'), ts: root.querySelector('.ts'), avg: root.querySelector('.avg'),
       pause: root.querySelector('.pause'), collapse: root.querySelector('.collapse'),
       live: root.querySelector('.live'), summary: root.querySelector('.summary'),
+      words: root.querySelector('.words'), wordEls: [...root.querySelectorAll('.word:not(.trap)')],
     };
     els.prog.style.strokeDasharray = String(2 * Math.PI * 44);
     els.pause.addEventListener('click', e => { e.stopPropagation(); S.paused = !S.paused; els.pause.classList.toggle('on', S.paused); });
@@ -515,6 +537,21 @@
 
   function flash(msg) { S.flashMsg = msg; S.flashUntil = Date.now() + 1800; }
 
+  // CoachMate's free game check. With the game id from the page URL it opens this exact game
+  // (/analyze?g=li:<id> or cc:live:<id>, plus your side); otherwise the plain analyze page.
+  const ANALYZE = 'https://www.coachmatechess.com/analyze';
+  function analyzeUrl() {
+    try {
+      const path = (typeof location !== 'undefined' && location.pathname) || '';
+      const side = S.userColor === 'b' ? 'b' : 'w';
+      let m;
+      if (adapter.name === 'lichess' && (m = /^\/([A-Za-z0-9]{8})(?:[A-Za-z0-9]{4})?(?:\/|$)/.exec(path))) return `${ANALYZE}?g=li:${m[1]}&side=${side}`;
+      if (adapter.name === 'chess.com' && (m = /^\/game\/(live|daily)\/(\d+)/.exec(path))) return `${ANALYZE}?g=cc:${m[1]}:${m[2]}&side=${side}`;
+      if (adapter.name === 'chess.com' && (m = /^\/game\/(\d+)/.exec(path))) return `${ANALYZE}?g=cc:auto:${m[1]}&side=${side}`;
+    } catch (_) { /* fall through to the plain page */ }
+    return ANALYZE;
+  }
+
   function statusInfo(now) {
     const me = S.userColor;
     if (!S.active) return { num: '—', label: 'Waiting for a game…', cls: 'idle' };
@@ -527,8 +564,11 @@
       const rem = Math.max(0, S.deadline - now) / 1000;
       const frac = S.allowance ? 1 - rem / S.allowance : 1;
       const label = S.forcing === 'capture' ? 'Recapture? Check for a trap first' : S.forcing === 'check' ? 'In check · pick the best reply' : 'You can make a move in';
-      if (rem > 0) return { num: rem.toFixed(1), unit: 's', frac, cls: 'wait', label };
-      return { num: '✓', frac: 1, cls: 'ok', label: 'You can move now' };
+      // Which word of the reminder is up: 0 Checks, 1 Captures, 2 Threats. A forced reply is too short for three
+      // words, so it shows the one that matters ("Trap?"); after the countdown all three read as done.
+      const stage = S.forcing ? 'forcing' : Math.min(2, Math.floor(frac * 3));
+      if (rem > 0) return { num: rem.toFixed(1), unit: 's', frac, cls: 'wait', label, stage };
+      return { num: '✓', frac: 1, cls: 'ok', label: 'You can move now', stage: 'done' };
     }
     if (S.turn == null) return { num: '—', label: 'Waiting for the first move…', cls: 'idle' };
     if (userMoves() + 1 < startMove()) return { num: String(userMoves() + 1), label: `Free move · countdown starts at move ${startMove()}`, cls: 'idle' };
@@ -550,6 +590,12 @@
     els.label.textContent = flashing ? S.flashMsg : info.label;
     els.num.innerHTML = info.unit ? `${info.num}<small>${info.unit}</small>` : info.num;
     els.mini.textContent = info.unit ? `${info.num}s` : info.num;
+    els.panel.classList.toggle('no-reminder', !settings.reminder);
+    els.words.classList.toggle('forcing', info.stage === 'forcing');
+    els.wordEls.forEach((w, i) => {
+      const on = info.stage === i, done = info.stage === 'done' || (typeof info.stage === 'number' && i < info.stage);
+      w.classList.toggle('on', on); w.classList.toggle('done', done);
+    });
     const C = 2 * Math.PI * 44;
     els.prog.style.strokeDashoffset = String(C * (1 - Math.min(1, Math.max(0, info.frac || 0))));
 
@@ -558,7 +604,7 @@
       if (S.tc) bits.push(S.tc.label + (S.tc.guessed ? '?' : ''));
       bits.push(`${fmt(S.budget)}s/move${S.budgetSource === 'auto' ? '' : S.budgetSource === 'fixed' ? ' (fixed)' : ' (default)'}`);
       bits.push(`move ${userMoves() + 1}`);
-      if (S.forcing && S.counterStart != null) bits.push(`floor ${fmt(S.allowance)}s`);
+      if (S.forcing && S.counterStart != null) bits.push(`min ${fmt(S.allowance)}s`);
     }
     els.meta.textContent = bits.join(' · ');
 
@@ -580,8 +626,10 @@
              <div><span>Quiet moves</span><b>${sm.quietQuick} of ${sm.quietJudged} quick</b></div>
              ${sm.avgShortfall != null ? `<div><span>Avg shortfall when quick</span><b>${fmt(sm.avgShortfall)}s</b></div>` : ''}
            </div>
-           <div class="sum-list">${quickList}</div>`
-        : `<div class="sum-head">Game over</div><div class="sum-sub">No moves were timed this game.</div>`;
+           <div class="sum-list">${quickList}</div>
+           <a class="sum-link" href="${analyzeUrl()}" target="_blank" rel="noopener">Analyze this game ↗</a>`
+        : `<div class="sum-head">Game over</div><div class="sum-sub">No moves were timed this game.</div>
+           <a class="sum-link" href="${analyzeUrl()}" target="_blank" rel="noopener">Analyze this game ↗</a>`;
     }
 
     els.m.textContent = String(S.judged);

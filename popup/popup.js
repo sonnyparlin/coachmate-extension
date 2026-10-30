@@ -1,10 +1,27 @@
 const DEFAULTS = {
   startMove: 5, budgetMode: 'auto', expectedMoves: 40, fixedSeconds: 15,
-  lowClockSeconds: 20, forcedFloorSeconds: 5, forcedFloorPercent: 25, sound: true, block: false, showOverlay: true, enabledLichess: true, enabledChesscom: true,
+  lowClockSeconds: 20, forcedFloorSeconds: 5, forcedFloorPercent: 25, sound: true, block: false, showOverlay: true, reminder: true, enabledLichess: true, enabledChesscom: true,
 };
 const $ = id => document.getElementById(id);
 const form = $('settings');
 const fmt = n => (n == null ? '–' : `${Math.round(n * 10) / 10}s`);
+
+// Mirrors allowanceFor() in content/core.js: share of the normal wait, capped, never under 1 s.
+function floorFor(budget, pct, cap) {
+  let f = budget * ((+pct || 0) / 100);
+  f = Math.min(f, +cap || Infinity);
+  f = Math.max(1, Math.round(f * 2) / 2);
+  return Math.min(budget, f);
+}
+function renderFloorExample() {
+  const pct = parseFloat(form.elements.forcedFloorPercent.value), cap = parseFloat(form.elements.forcedFloorSeconds.value);
+  const el = $('floorExample');
+  if (!Number.isFinite(pct) || !Number.isFinite(cap)) { el.textContent = ''; return; }
+  const moves = parseFloat(form.elements.expectedMoves.value) || 40;
+  const ex = [['10+5', 600 / moves + 5], ['3+2', 180 / moves + 2], ['1+0', 60 / moves]]
+    .map(([tc, b]) => `${fmt(floorFor(b, pct, cap))} in ${tc}`);
+  el.textContent = `With ${pct}% capped at ${fmt(cap)}: ${ex.join(', ')}.`;
+}
 
 function applyVisibility() {
   for (const el of form.querySelectorAll('[data-show]')) {
@@ -20,6 +37,7 @@ chrome.storage.sync.get(DEFAULTS, s => {
     if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
   }
   applyVisibility();
+  renderFloorExample();
 });
 
 form.addEventListener('input', e => {
@@ -29,6 +47,7 @@ form.addEventListener('input', e => {
   if (el.type === 'number') { v = parseFloat(v); if (!Number.isFinite(v)) return; }
   chrome.storage.sync.set({ [el.name]: v });
   applyVisibility();
+  renderFloorExample();
 });
 
 // ---- live stats from the active tab ----
