@@ -45,15 +45,66 @@ Time control detection:
   clock jumps after they move. The label shows a `?` until a few moves confirm it.
   Use "fixed number of seconds" in the popup if you prefer certainty.
 
-## Install (unpacked)
+## Install
 
-1. Open `chrome://extensions` in Chrome.
-2. Turn on **Developer mode** (top right).
-3. Click **Load unpacked** and choose this folder (the one containing `manifest.json`).
+The extension is not in the Chrome Web Store yet, so it installs as an unpacked folder:
+
+1. Download the zip from the [latest release](https://github.com/sonnyparlin/coachmate-extension/releases/latest)
+   and unzip it somewhere permanent (Chrome loads it from that folder every time it starts).
+2. Open `chrome://extensions` (Edge: `edge://extensions`) and turn on **Developer mode** (top right).
+3. Click **Load unpacked** and choose the unzipped folder (the one containing `manifest.json`).
 4. Open a game on lichess.org or chess.com. The panel appears top-right; drag its title
-   bar to move it, use `–` to collapse it to a pill, and `⏸` to pause.
+   bar to move it, use `–` to collapse it to a pill, and `⏸` to pause. Settings are in the
+   toolbar popup (pin the icon from the puzzle-piece menu if it is hidden).
 
-After editing any file, click the reload icon on the extension card and refresh the game tab.
+Chrome reminds you about developer-mode extensions on each restart until it is in the store.
+To update, unzip the new release over the same folder and click the reload icon on the card;
+settings and history are kept. Loading a second copy from another folder makes a second
+extension with its own settings, so remove the old card first if you move it.
+
+Developing: edit the files, click the reload icon on the extension card, refresh the game tab.
+No build step.
+
+## Fair play
+
+The extension is built to stay on the right side of both sites' rules, and the design keeps
+it there:
+
+- During a game it reads only the move list, the clocks and the time-control label. It never
+  evaluates the position, never looks up a book, and never touches the board input (the
+  optional "cover the board" setting only swallows your own clicks, and is off by default).
+- The wait depends only on things you can already see: the time control, the move number,
+  and whether the opponent's last move was a capture or a check. A wait that depended on the
+  position would leak the position through its length, and would count as analysis during
+  play under [chess.com's Fair Play Policy](https://www.chess.com/legal/fair-play) and as
+  external assistance under [lichess's rules](https://lichess.org/page/fair-play). That is a
+  line this project does not cross, whatever the feature.
+- Nothing leaves your browser. Settings sync through your Chrome profile; game history and
+  the all-time tally are stored locally.
+
+If chess.com or lichess ever object to a specific behaviour, the fix is to remove it, not to
+hide it.
+
+## CoachMate
+
+The post-game side of this lives in CoachMate's **My report**: the card "Where do I rush?"
+puts your mistake rate (from the computer check) next to your seconds a move, by phase and
+for replies to a capture or check, and tags a phase as rushing when it has clearly more
+mistakes and clearly less time than the rest of your moves. The extension is the in-game
+guardrail; the report is where the learning happens, after the game, where an engine is
+allowed.
+
+Ideas considered and parked, with the reasoning, are written up in the CoachMate repo's
+`TODO.md` under "⏱ Pace": a per-player pace schedule learned from past games and pushed to
+the extension (fair, since it would be set between games from visible features only, but it
+makes the wait unpredictable and the insight already belongs in the report), and a
+"Send to CoachMate" button for the per-game summary. Neither is planned right now.
+
+## Releases
+
+Bump `version` in `manifest.json`, commit, tag `vX.Y.Z`, and attach a zip of
+`manifest.json content popup icons README.md` (manifest at the zip root) to a GitHub
+release. The same zip is what the Chrome Web Store and Edge Add-ons dashboards take.
 
 ## Options (toolbar popup)
 
