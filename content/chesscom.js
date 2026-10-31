@@ -6,7 +6,8 @@
 
   const FILES = 'abcdefgh';
   const q = (sel, r = document) => r.querySelector(sel);
-  const GAME_PATH = /^\/(game\/(live|daily|computer)|play\/(online|computer|coach)|live|daily)(\/|$)/;
+  // Live games now land on a bare /game/<id>; the older /game/live|daily|computer/<id> shapes still exist.
+  const GAME_PATH = /^\/(game\/(live|daily|computer|\d+)|play\/(online|computer|coach)|live|daily)(\/|$)/;
 
   function board() {
     if (!GAME_PATH.test(location.pathname)) return null;
