@@ -14,6 +14,11 @@ package on its own schedule.
 
 Your first four moves are free. From your 5th move on (configurable), each time your
 opponent moves you must wait `base time ÷ expected game length + increment` before replying.
+If you would rather decide for yourself when the opening is over, set **Start counting** to
+"when I press Start": the panel then shows a **Start the countdown** button and nothing is timed
+until you press it. In the default mode the same button reads **Start now** during the free
+moves, so you can begin early. If it is already your turn when you press it, the countdown for
+that move begins immediately. Each new game starts fresh.
 With the default game length of 40 moves, a 10+5 game gives 15 + 5 = **20 s per move**,
 3+2 gives 6.5 s, and 1+0 gives 1.5 s.
 
@@ -128,7 +133,8 @@ release. The same zip is what the Chrome Web Store and Edge Add-ons dashboards t
 
 ## Options (toolbar popup)
 
-- **Start counting at my move number** – moves before this are not timed (default 5).
+- **Start counting** – at a move number (default) or when you press Start in the panel.
+- **Start counting at my move number** – in move-number mode, moves before this are not timed (default 5).
 - **Budget source** – from the time control (default) or a fixed number of seconds.
 - **Expected game length** – the move count the base time is divided across (default 40).
 - **Fixed seconds** – used in fixed mode and whenever no time control can be read (default 15).

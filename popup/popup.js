@@ -1,5 +1,5 @@
 const DEFAULTS = {
-  startMove: 5, budgetMode: 'auto', expectedMoves: 40, fixedSeconds: 15,
+  startMode: 'move', startMove: 5, budgetMode: 'auto', expectedMoves: 40, fixedSeconds: 15,
   lowClockSeconds: 20, forcedFloorSeconds: 5, forcedFloorPercent: 25, sound: true, block: false, showOverlay: true, reminder: true, enabledLichess: true, enabledChesscom: true,
 };
 const $ = id => document.getElementById(id);
@@ -69,6 +69,7 @@ function renderStats(s) {
   $('pause').classList.toggle('on', !!(s && s.paused));
   $('pause').textContent = s && s.paused ? 'Resume' : 'Pause';
   $('pause').disabled = !s;
+  $('startRow').classList.toggle('hidden', !(active && s.waitingForStart));
 }
 function renderGames(games) {
   games = (games || []).slice(0, 8);
@@ -97,6 +98,7 @@ chrome.storage.onChanged.addListener((c, area) => { if (area === 'local' && c.ga
 $('clearGames').addEventListener('click', () => chrome.storage.local.set({ games: [] }, () => renderGames([])));
 
 $('pause').addEventListener('click', () => send('togglePause', renderStats));
+$('start').addEventListener('click', () => send('start', renderStats));
 $('resetGame').addEventListener('click', () => send('resetGameStats', renderStats));
 $('resetLifetime').addEventListener('click', () => {
   chrome.storage.local.set({ lifetime: { judged: 0, tooSoon: 0 } }, () => renderLifetime(null));

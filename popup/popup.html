@@ -22,6 +22,7 @@
       <span>Avg <b id="avg">–</b></span>
       <button id="resetGame" class="link">reset</button>
     </div>
+    <div id="startRow" class="row hidden"><span class="k">Countdown not started</span><button id="start" class="ghost">Start now</button></div>
     <div id="inactive" class="note hidden">Open a game on lichess.org or chess.com to see live numbers.</div>
   </section>
 
@@ -34,9 +35,17 @@
     <h2>Countdown</h2>
     <p class="note">The countdown starts each time your opponent moves and tells you when you may reply.</p>
     <label class="field">
+      <span>Start counting</span>
+      <select name="startMode">
+        <option value="move">at a move number</option>
+        <option value="click">when I press Start</option>
+      </select>
+      <small>Either way, moves before the start are free. A Start button sits in the on-page panel (and above) until the countdown begins.</small>
+    </label>
+    <label class="field" data-show="startMode=move">
       <span>Start counting at my move number</span>
       <input name="startMove" type="number" min="1" max="100" step="1">
-      <small>Moves before this are free. 5 means the first four moves are not timed.</small>
+      <small>5 means the first four moves are not timed. Press Start now in the panel to begin earlier.</small>
     </label>
 
     <h2>How long to wait</h2>

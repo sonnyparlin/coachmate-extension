@@ -6,7 +6,8 @@
   window.__slowDownChessLoaded = true;
 
   const DEFAULTS = {
-    startMove: 5,             // the countdown applies from this move of yours on (the first 4 are free)
+    startMode: 'move',        // 'move' (from startMove on) | 'click' (from the Start button in the panel)
+    startMove: 5,             // in 'move' mode the countdown applies from this move of yours on (the first 4 are free)
     budgetMode: 'auto',       // 'auto' (from time control) | 'fixed'
     expectedMoves: 40,        // game length used to split the base time
     fixedSeconds: 15,         // used in fixed mode, or when no time control can be read
@@ -65,6 +66,7 @@
       turn: null, ply: null, plyMode: false, plyMissingSince: 0, evUserMoves: 0,
       tc: null, budget: null, budgetSource: 'fallback',
       counterStart: null, deadline: null, allowance: null, forcing: null, readyNotified: false,
+      armed: false, armedMove: null, // set by the panel's Start button: the countdown applies from armedMove on
       judged: 0, tooSoon: 0, thinkTimes: [], moveLog: [], summary: null, startedAt: Date.now(),
       paused: false, gameOver: false, lowClock: false, clock: null,
       oppClock: null, oppClockMin: null, oppClockBefore: null, incWatchUntil: 0, incWatchMax: null, incSamples: [],
@@ -92,11 +94,28 @@
     return { seconds: s, source: 'auto' };
   }
   const startMove = () => Math.max(1, Math.round(+settings.startMove) || 1);
+  // The move of yours the countdown applies from. In 'click' mode nothing is timed until you press
+  // Start; in 'move' mode pressing Start early moves the threshold up to the current move.
+  function countsFrom() {
+    if (settings.startMode === 'click') return S.armed ? S.armedMove : Infinity;
+    return S.armed ? Math.min(S.armedMove, startMove()) : startMove();
+  }
+  const waitingForStart = () => S.active && !S.armed && !S.gameOver && !S.summary && userMoves() + 1 < countsFrom();
+  // The Start button. If it is already your turn, the countdown for this move begins right now.
+  function arm(now) {
+    if (!S.active || S.armed || S.gameOver) return;
+    S.armed = true;
+    S.armedMove = userMoves() + 1;
+    if (S.turn === S.userColor && S.counterStart == null && !S.paused) {
+      const san = S.plyMode && S.ply > 0 && adapter.getMoveSan ? adapter.getMoveSan(S.ply) : null;
+      startCounter(now, S.armedMove, classifyMove(san));
+    }
+  }
   // Seconds you must wait before your move number `moveNo` (0 while the countdown is not yet active).
   // `forcing` is set when the opponent just captured or gave check: the reply is usually obvious,
   // so only a short floor applies, enough to look for a trap or an in-between move.
   function allowanceFor(moveNo, forcing) {
-    if (moveNo < startMove()) return 0;
+    if (moveNo < countsFrom()) return 0;
     const budget = S.budget != null ? S.budget : computeBudget().seconds;
     if (!forcing) return budget;
     // Scales with the time control: a share of the budget, capped in seconds, never under 1 s.
@@ -192,8 +211,8 @@
       stopCounter();
       S.oppClockMin = null; // opponent's turn starts: track their lowest clock reading
     } else {
-      // The countdown only ever starts when the opponent moves, and only from `startMove` on.
-      if (played + 1 >= startMove()) startCounter(now, played + 1, classifyMove(san));
+      // The countdown only ever starts when the opponent moves, and only from `countsFrom()` on.
+      if (played + 1 >= countsFrom()) startCounter(now, played + 1, classifyMove(san));
       if (S.tc && S.tc.incUnknown && S.oppClock != null) {
         // Their clock only falls during their turn, so the lowest reading is the pre-increment value
         // even if the site applied the increment a tick before the board updated.
@@ -404,6 +423,10 @@
     .idle .num { color: var(--muted); } .idle .prog { stroke: transparent; }
     .flash .num { color: var(--bad); } .flash .prog { stroke: var(--bad); }
     .meta { font: 500 11px/1.4 var(--font-ui); color: var(--muted); margin-top: 2px; min-height: 15px; font-variant-numeric: tabular-nums; }
+    .start { all: unset; box-sizing: border-box; display: block; width: 100%; margin: 8px 0 2px; padding: 8px 10px; border-radius: 9px; text-align: center;
+      cursor: pointer; font: 700 12px/1.2 var(--font-ui); color: var(--on-accent); background: var(--accent-2); }
+    .start:hover { filter: brightness(1.1); }
+    .start:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .stats { display: flex; justify-content: space-between; gap: 6px; margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--line);
       font-size: 11px; color: var(--muted); }
     .stats b { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -457,6 +480,7 @@
               <div class="words"><span class="word">Checks</span><span class="word">Captures</span><span class="word">Threats</span><span class="word trap on">Trap?</span></div>
             </div>
             <div class="meta"></div>
+            <button class="start" style="display:none" title="Begin the countdown from this move on">Start the countdown</button>
           </div>
           <div class="summary" style="display:none"></div>
           <div class="stats">
@@ -473,7 +497,9 @@
       pause: root.querySelector('.pause'), collapse: root.querySelector('.collapse'),
       live: root.querySelector('.live'), summary: root.querySelector('.summary'),
       words: root.querySelector('.words'), wordEls: [...root.querySelectorAll('.word:not(.trap)')],
+      start: root.querySelector('.start'),
     };
+    els.start.addEventListener('click', e => { e.stopPropagation(); arm(Date.now()); render(Date.now()); });
     els.prog.style.strokeDasharray = String(2 * Math.PI * 44);
     els.pause.addEventListener('click', e => { e.stopPropagation(); S.paused = !S.paused; els.pause.classList.toggle('on', S.paused); });
     els.collapse.addEventListener('click', e => { e.stopPropagation(); setCollapsed(!collapsed); });
@@ -597,7 +623,10 @@
       return { num: '✓', frac: 1, cls: 'ok', label: 'You can move now', stage: 'done' };
     }
     if (S.turn == null) return { num: '—', label: 'Waiting for the first move…', cls: 'idle' };
-    if (userMoves() + 1 < startMove()) return { num: String(userMoves() + 1), label: `Free move · countdown starts at move ${startMove()}`, cls: 'idle' };
+    if (userMoves() + 1 < countsFrom()) {
+      const label = settings.startMode === 'click' ? 'Free move · press Start when you are ready' : `Free move · countdown starts at move ${countsFrom()}`;
+      return { num: String(userMoves() + 1), label, cls: 'idle' };
+    }
     if (!myTurn) return { num: '—', label: "Opponent's turn", cls: 'idle' };
     return { num: '—', label: 'Your turn · no countdown yet', cls: 'idle' };
   }
@@ -633,6 +662,9 @@
       if (S.forcing && S.counterStart != null) bits.push(`min ${fmt(S.allowance)}s`);
     }
     els.meta.textContent = bits.join(' · ');
+    const showStart = waitingForStart() && !S.paused && !S.lowClock;
+    els.start.style.display = showStart ? '' : 'none';
+    if (showStart) els.start.textContent = settings.startMode === 'click' ? 'Start the countdown' : 'Start now';
 
     // End-of-game summary replaces the ring until the next game starts.
     const sm = S.summary;
@@ -703,6 +735,7 @@
       tc: S.tc ? S.tc.label : null, budget: S.budget, budgetSource: S.budgetSource,
       nextMove: userMoves() + 1, nextAllowance: allowanceFor(userMoves() + 1),
       judged: S.judged, tooSoon: S.tooSoon, avg, lifetime, summary: S.summary, startMove: startMove(),
+      countsFrom: countsFrom(), waitingForStart: waitingForStart(),
     };
   }
 
@@ -721,6 +754,7 @@
           if (msg.type === 'getStats') sendResponse(stats());
           else if (msg.type === 'resetGameStats') { S.judged = 0; S.tooSoon = 0; S.thinkTimes = []; sendResponse(stats()); }
           else if (msg.type === 'togglePause') { S.paused = !S.paused; els.pause.classList.toggle('on', S.paused); sendResponse(stats()); }
+          else if (msg.type === 'start') { arm(Date.now()); sendResponse(stats()); }
         });
       }
       setInterval(tick, 100);
