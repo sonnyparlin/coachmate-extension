@@ -13,10 +13,48 @@
     if (!GAME_PATH.test(location.pathname)) return null;
     return q('wc-chess-board, chess-board');
   }
-  const flipped = b => b.classList.contains('flipped');
+  const flipped = b => b.classList.contains('flipped') || b.hasAttribute('flipped') || !!b.closest('.flipped');
+  const other = c => (c === 'w' ? 'b' : 'w');
 
   function moveList() { return q('wc-simple-move-list, vertical-move-list, wc-move-list'); }
   function nodes(l) { return [...l.querySelectorAll('.node')].filter(n => n.textContent.trim()); }
+
+  // Which color sits at the bottom of the board (the user, during play). chess.com has changed its
+  // markup more than once, so several signals are tried, strongest first, and a confident answer is
+  // kept for the rest of the game so a signal that disappears mid-game cannot flip it.
+  let colorMemo = { key: null, color: null };
+  function bottomColor() {
+    const b = board();
+    if (!b) return null;
+    if (colorMemo.key !== location.pathname) colorMemo = { key: location.pathname, color: null };
+    let c = null;
+    // 1. The board is flipped when the user plays black.
+    if (flipped(b)) c = 'b';
+    // 2. The clock / player components carry the color.
+    if (!c) {
+      const colorOf = el => !el ? null
+        : el.matches('.clock-black, .player-black, [data-color="black"]') || el.querySelector('.clock-black, .player-black, [data-color="black"]') ? 'b'
+        : el.matches('.clock-white, .player-white, [data-color="white"]') || el.querySelector('.clock-white, .player-white, [data-color="white"]') ? 'w' : null;
+      c = colorOf(q('.clock-bottom')) || colorOf(q('.player-bottom'));
+      if (!c) { const t = colorOf(q('.clock-top')) || colorOf(q('.player-top')); if (t) c = other(t); }
+    }
+    // 3. The first rank label drawn on the board is "8" with white at the bottom, "1" with black.
+    if (!c) {
+      const t = b.querySelector('.coordinates text, svg text');
+      const v = t && t.textContent.trim();
+      if (v === '1') c = 'b'; else if (v === '8') c = 'w';
+    }
+    // 4. Whichever clock is running belongs to the side to move.
+    if (!c) {
+      const l = moveList();
+      if (l) {
+        const stm = nodes(l).length % 2 === 0 ? 'w' : 'b';
+        if (q('.clock-bottom.clock-player-turn')) c = stm; else if (q('.clock-top.clock-player-turn')) c = other(stm);
+      }
+    }
+    if (c) colorMemo.color = c;
+    return colorMemo.color || 'w';
+  }
 
   function clockText(sel) {
     const c = q(sel);
@@ -35,8 +73,8 @@
       const t = e ? e.textContent.trim() : '';
       return t && !/^(Player|Opponent)$/i.test(t) ? t : null;
     },
-    // The player at the bottom of the board is the user; the board is flipped when playing black.
-    getUserColor() { const b = board(); return b ? (flipped(b) ? 'b' : 'w') : null; },
+    // The player at the bottom of the board is the user.
+    getUserColor: bottomColor,
 
     getPly() {
       const l = moveList();
@@ -51,6 +89,21 @@
       const sel = l.querySelector('.selected');
       const node = sel && sel.closest('.node');
       return !!(node && all.length && node !== all[all.length - 1]);
+    },
+
+    // Who played the move at ply p (1-based), from the node's own markup rather than its position in
+    // the list, so a stray node can not shift every move to the other side. Null when unknown.
+    getMoveColor(p) {
+      const l = moveList();
+      const el = l && nodes(l)[p - 1];
+      if (!el) return null;
+      if (el.matches('.white-move, .white, [data-color="white"]')) return 'w';
+      if (el.matches('.black-move, .black, [data-color="black"]')) return 'b';
+      // A full row holds the move number, then white's move, then black's.
+      const row = el.parentElement;
+      const sib = row ? [...row.querySelectorAll('.node')].filter(n => n.textContent.trim()) : [];
+      if (sib.length === 2) return sib[0] === el ? 'w' : 'b';
+      return null;
     },
 
     // Notation of the move at ply p (1-based), e.g. "Nxe5" or "Qh5+".
@@ -108,11 +161,10 @@
 
     // chess.com marks the running clock with .clock-player-turn.
     getTurnColor() {
-      const b = board();
-      if (!b) return null;
-      const bottom = flipped(b) ? 'b' : 'w';
+      const bottom = bottomColor();
+      if (!bottom) return null;
       if (q('.clock-bottom.clock-player-turn')) return bottom;
-      if (q('.clock-top.clock-player-turn')) return bottom === 'w' ? 'b' : 'w';
+      if (q('.clock-top.clock-player-turn')) return other(bottom);
       return null;
     },
 

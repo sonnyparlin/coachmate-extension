@@ -82,6 +82,8 @@
   const userMovesAtPly = p => (S.userColor === 'w' ? Math.ceil(p / 2) : Math.floor(p / 2));
   const userMoves = () => (S.plyMode && S.ply != null ? userMovesAtPly(S.ply) : S.evUserMoves);
   const opposite = c => (c === 'w' ? 'b' : 'w');
+  // Who played ply p: the adapter's answer when its move list says, else by parity (white on odd plies).
+  const moverAt = p => (adapter.getMoveColor && adapter.getMoveColor(p)) || (p % 2 === 1 ? 'w' : 'b');
 
   // ---------- budget ----------
   function computeBudget() {
@@ -258,6 +260,7 @@
       if (key !== S.gameKey) resetGame(key);
       const color = adapter.getUserColor();
       if (!color) { setActive(false); render(now); return; }
+      if (color !== S.userColor) console.debug('[CoachMate Slow Down] playing', color === 'b' ? 'black' : 'white', 'on', adapter.name);
       S.userColor = color;
       S.active = true;
 
@@ -273,7 +276,7 @@
         S.plyMissingSince = 0;
         if (!S.plyMode || S.ply == null) {
           S.plyMode = true; S.ply = ply;
-          if (S.turn == null) S.turn = ply % 2 === 0 ? 'w' : 'b';
+          if (S.turn == null) S.turn = ply === 0 ? 'w' : opposite(moverAt(ply));
         } else if (ply < S.ply - 2) {
           resetGame(key); S.userColor = color; S.active = true; S.plyMode = true; S.ply = ply;
         } else if (ply < S.ply) {
@@ -281,7 +284,7 @@
         } else if (ply > S.ply) {
           for (let p = S.ply + 1; p <= ply; p++) {
             S.ply = p;
-            handleMove(p % 2 === 1 ? 'w' : 'b', now, userMovesAtPly(p), adapter.getMoveSan ? adapter.getMoveSan(p) : null);
+            handleMove(moverAt(p), now, userMovesAtPly(p), adapter.getMoveSan ? adapter.getMoveSan(p) : null);
           }
         }
         S.initialized = true;
@@ -664,6 +667,7 @@
       if (S.tc) bits.push(S.tc.label + (S.tc.guessed ? '?' : ''));
       bits.push(`${fmt(S.budget)}s/move${S.budgetSource === 'auto' ? '' : S.budgetSource === 'fixed' ? ' (fixed)' : ' (default)'}`);
       bits.push(`move ${userMoves() + 1}`);
+      bits.push(S.userColor === 'b' ? 'as black' : 'as white');
       if (S.forcing && S.counterStart != null) bits.push(`min ${fmt(S.allowance)}s`);
     }
     els.meta.textContent = bits.join(' · ');
