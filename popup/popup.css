@@ -19,6 +19,8 @@
 }
 * { box-sizing: border-box; }
 body { width: 324px; margin: 0; padding: 12px 14px 12px; font: 500 13px/1.45 var(--font-ui); color: var(--text); background: var(--bg); }
+/* Opened as the Options page (right-click the icon, or ⚙ in the panel) it gets a whole tab. */
+@media (min-width: 480px) { html { background: var(--bg); } body { margin: 24px auto; } }
 
 header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .logo { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }

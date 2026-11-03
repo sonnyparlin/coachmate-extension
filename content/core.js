@@ -466,6 +466,7 @@
         <div class="bar">
           <span class="logo">${markHtml()}<b>Coach<i>Mate</i></b><span class="sub">Slow down</span></span>
           <span class="mini">—</span>
+          <button class="btn gear" title="Settings">⚙</button>
           <button class="btn pause" title="Pause / resume">⏸</button>
           <button class="btn collapse" title="Collapse / expand">–</button>
         </div>
@@ -497,8 +498,12 @@
       pause: root.querySelector('.pause'), collapse: root.querySelector('.collapse'),
       live: root.querySelector('.live'), summary: root.querySelector('.summary'),
       words: root.querySelector('.words'), wordEls: [...root.querySelectorAll('.word:not(.trap)')],
-      start: root.querySelector('.start'),
+      start: root.querySelector('.start'), gear: root.querySelector('.gear'),
     };
+    els.gear.addEventListener('click', e => {
+      e.stopPropagation();
+      try { chrome.runtime.sendMessage({ type: 'openOptions' }); } catch (_) { /* not running as an extension */ }
+    });
     els.start.addEventListener('click', e => { e.stopPropagation(); arm(Date.now()); render(Date.now()); });
     els.prog.style.strokeDasharray = String(2 * Math.PI * 44);
     els.pause.addEventListener('click', e => { e.stopPropagation(); S.paused = !S.paused; els.pause.classList.toggle('on', S.paused); });
@@ -755,9 +760,17 @@
           else if (msg.type === 'resetGameStats') { S.judged = 0; S.tooSoon = 0; S.thinkTimes = []; sendResponse(stats()); }
           else if (msg.type === 'togglePause') { S.paused = !S.paused; els.pause.classList.toggle('on', S.paused); sendResponse(stats()); }
           else if (msg.type === 'start') { arm(Date.now()); sendResponse(stats()); }
+          else if (msg.type === 'togglePanel') {
+            // The toolbar icon on a game tab. Same switch as the popup's "Show the on-page panel".
+            settings.showOverlay = !settings.showOverlay;
+            chrome.storage.sync.set({ showOverlay: settings.showOverlay });
+            render(Date.now());
+            sendResponse({ showOverlay: settings.showOverlay });
+          }
         });
       }
       setInterval(tick, 100);
+      if (hasStorage) { try { chrome.runtime.sendMessage({ type: 'panelReady' }).catch(() => {}); } catch (_) { /* worker asleep */ } }
     });
   }
 

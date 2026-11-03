@@ -79,8 +79,10 @@ The extension is not in the Chrome Web Store yet, so it installs as an unpacked 
 2. Open `chrome://extensions` (Edge: `edge://extensions`) and turn on **Developer mode** (top right).
 3. Click **Load unpacked** and choose the unzipped folder (the one containing `manifest.json`).
 4. Open a game on lichess.org or chess.com. The panel appears top-right; drag its title
-   bar to move it, use `–` to collapse it to a pill, and `⏸` to pause. Settings are in the
-   toolbar popup (pin the icon from the puzzle-piece menu if it is hidden).
+   bar to move it, use `–` to collapse it to a pill, and `⏸` to pause. On a game tab, clicking
+   the toolbar icon shows or hides the panel (pin the icon from the puzzle-piece menu if it is
+   hidden). Settings are behind the panel's `⚙`, or right-click the icon → Options; on any
+   other tab the icon opens the settings popup directly.
 
 Chrome reminds you about developer-mode extensions on each restart until it is in the store.
 To update, unzip the new release over the same folder and click the reload icon on the card;
@@ -128,7 +130,7 @@ makes the wait unpredictable and the insight already belongs in the report), and
 ## Releases
 
 Bump `version` in `manifest.json`, commit, tag `vX.Y.Z`, and attach a zip of
-`manifest.json content popup icons README.md` (manifest at the zip root) to a GitHub
+`manifest.json background.js content popup icons README.md` (manifest at the zip root) to a GitHub
 release. The same zip is what the Chrome Web Store and Edge Add-ons dashboards take.
 
 ## Options (toolbar popup)
@@ -144,7 +146,8 @@ release. The same zip is what the Chrome Web Store and Edge Add-ons dashboards t
 - **Cover the board** – optional hard mode: a transparent cover sits over the board until the
   countdown ends so a premature move is impossible. Off by default.
 - **Show Checks · Captures · Threats** – the reminder beside the dial (on by default).
-- Per-site on/off switches and a toggle for the on-page panel.
+- Per-site on/off switches and a toggle for the on-page panel (the toolbar icon flips the same
+  switch on game tabs).
 
 The popup also shows the current game's numbers (time control, budget, next move, moves judged,
 too-quick count, average think time), the recent games list and an all-time tally.
@@ -153,6 +156,7 @@ too-quick count, average think time), the recent games list and an all-time tall
 
 ```
 manifest.json          MV3 manifest
+background.js          service worker: toolbar icon toggles the panel on game tabs, opens settings elsewhere
 content/core.js        countdown logic, move detection, overlay, sounds, settings, stats
 content/lichess.js     lichess DOM adapter (board, move list, clocks, time control)
 content/chesscom.js    chess.com DOM adapter
