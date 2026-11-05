@@ -760,7 +760,8 @@
         });
         chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           if (!msg || !msg.type) return;
-          if (msg.type === 'getStats') sendResponse(stats());
+          if (msg.type === 'ping') sendResponse({ coachmate: true });
+          else if (msg.type === 'getStats') sendResponse(stats());
           else if (msg.type === 'resetGameStats') { S.judged = 0; S.tooSoon = 0; S.thinkTimes = []; sendResponse(stats()); }
           else if (msg.type === 'togglePause') { S.paused = !S.paused; els.pause.classList.toggle('on', S.paused); sendResponse(stats()); }
           else if (msg.type === 'start') { arm(Date.now()); sendResponse(stats()); }
@@ -774,7 +775,14 @@
         });
       }
       setInterval(tick, 100);
-      if (hasStorage) { try { chrome.runtime.sendMessage({ type: 'panelReady' }).catch(() => {}); } catch (_) { /* worker asleep */ } }
+      // Tell the worker this tab has a panel, so the toolbar icon toggles it. Again after every
+      // in-page navigation: the worker cannot see addresses, and both sites move lobby → game that way.
+      const announce = () => { try { chrome.runtime.sendMessage({ type: 'panelReady' }).catch(() => {}); } catch (_) { /* worker asleep */ } };
+      if (hasStorage) {
+        announce();
+        let lastHref = location.href;
+        setInterval(() => { if (location.href !== lastHref) { lastHref = location.href; announce(); } }, 500);
+      }
     });
   }
 
