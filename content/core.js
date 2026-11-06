@@ -82,9 +82,10 @@
   const userMovesAtPly = p => (S.userColor === 'w' ? Math.ceil(p / 2) : Math.floor(p / 2));
   const userMoves = () => (S.plyMode && S.ply != null ? userMovesAtPly(S.ply) : S.evUserMoves);
   const opposite = c => (c === 'w' ? 'b' : 'w');
-  // The game's move number as the move list counts it. White's reply to move N is still pending while
-  // Black thinks, so as White the number only goes up once Black has answered.
-  const moveNo = () => Math.max(1, userMoves() + (S.userColor === 'w' && S.turn === 'b' ? 0 : 1));
+  // The move number of the last move played, as the move list numbers its rows: "1. white, black",
+  // "2. white, black". It goes up when White moves and never when Black does, whichever side you are.
+  // (As Black with Black to move, White has already opened the row you are about to complete.)
+  const moveNo = () => Math.max(1, userMoves() + (S.userColor === 'b' && S.turn === 'b' ? 1 : 0));
   // Who played ply p: the adapter's answer when its move list says, else by parity (white on odd plies).
   const moverAt = p => (adapter.getMoveColor && adapter.getMoveColor(p)) || (p % 2 === 1 ? 'w' : 'b');
 
