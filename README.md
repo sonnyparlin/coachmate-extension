@@ -149,7 +149,7 @@ release. The same zip is what the Chrome Web Store and Edge Add-ons dashboards t
 - Per-site on/off switches and a toggle for the on-page panel (the toolbar icon flips the same
   switch on game tabs).
 
-The popup also shows the current game's numbers (time control, budget, next move, moves judged,
+The popup also shows the current game's numbers (time control, budget, move number, moves judged,
 too-quick count, average think time), the recent games list and an all-time tally.
 
 ## Layout

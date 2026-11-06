@@ -82,6 +82,9 @@
   const userMovesAtPly = p => (S.userColor === 'w' ? Math.ceil(p / 2) : Math.floor(p / 2));
   const userMoves = () => (S.plyMode && S.ply != null ? userMovesAtPly(S.ply) : S.evUserMoves);
   const opposite = c => (c === 'w' ? 'b' : 'w');
+  // The game's move number as the move list counts it. White's reply to move N is still pending while
+  // Black thinks, so as White the number only goes up once Black has answered.
+  const moveNo = () => Math.max(1, userMoves() + (S.userColor === 'w' && S.turn === 'b' ? 0 : 1));
   // Who played ply p: the adapter's answer when its move list says, else by parity (white on odd plies).
   const moverAt = p => (adapter.getMoveColor && adapter.getMoveColor(p)) || (p % 2 === 1 ? 'w' : 'b');
 
@@ -633,7 +636,7 @@
     if (S.turn == null) return { num: '—', label: 'Waiting for the first move…', cls: 'idle' };
     if (userMoves() + 1 < countsFrom()) {
       const label = settings.startMode === 'click' ? 'Free move · press Start when you are ready' : `Free move · countdown starts at move ${countsFrom()}`;
-      return { num: String(userMoves() + 1), label, cls: 'idle' };
+      return { num: String(moveNo()), label, cls: 'idle' };
     }
     if (!myTurn) return { num: '—', label: "Opponent's turn", cls: 'idle' };
     return { num: '—', label: 'Your turn · no countdown yet', cls: 'idle' };
@@ -666,7 +669,7 @@
     if (S.active) {
       if (S.tc) bits.push(S.tc.label + (S.tc.guessed ? '?' : ''));
       bits.push(`${fmt(S.budget)}s/move${S.budgetSource === 'auto' ? '' : S.budgetSource === 'fixed' ? ' (fixed)' : ' (default)'}`);
-      bits.push(`move ${userMoves() + 1}`);
+      bits.push(`move ${moveNo()}`);
       bits.push(S.userColor === 'b' ? 'as black' : 'as white');
       if (S.forcing && S.counterStart != null) bits.push(`min ${fmt(S.allowance)}s`);
     }
@@ -742,7 +745,7 @@
     return {
       site: adapter && adapter.name, active: S.active, paused: S.paused,
       tc: S.tc ? S.tc.label : null, budget: S.budget, budgetSource: S.budgetSource,
-      nextMove: userMoves() + 1, nextAllowance: allowanceFor(userMoves() + 1),
+      move: moveNo(), nextAllowance: allowanceFor(userMoves() + 1),
       judged: S.judged, tooSoon: S.tooSoon, avg, lifetime, summary: S.summary, startMove: startMove(),
       countsFrom: countsFrom(), waitingForStart: waitingForStart(),
     };

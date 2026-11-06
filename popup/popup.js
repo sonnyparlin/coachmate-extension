@@ -62,7 +62,7 @@ function renderStats(s) {
   $('site').textContent = s && s.site ? s.site : '–';
   $('tc').textContent = active ? (s.tc || 'not found') : '–';
   $('budget').textContent = active ? `${fmt(s.budget)}${s.budgetSource === 'auto' ? '' : s.budgetSource === 'fixed' ? ' (fixed)' : ' (default)'}` : '–';
-  $('next').textContent = active ? `#${s.nextMove} · ${fmt(s.nextAllowance)}` : '–';
+  $('next').textContent = active ? `#${s.move} · ${fmt(s.nextAllowance)}` : '–';
   $('judged').textContent = s ? s.judged : 0;
   $('tooSoon').textContent = s ? s.tooSoon : 0;
   $('avg').textContent = s ? fmt(s.avg) : '–';
